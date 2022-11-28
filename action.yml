@@ -12,14 +12,18 @@ runs:
   using: 'composite'
   steps:
     - name: Install aws-iam-authenticator
+      shell: bash
       run: curl -o aws-iam-authenticator https://amazon-eks.s3.us-west-2.amazonaws.com/1.21.2/2021-07-05/bin/linux/amd64/aws-iam-authenticator && chmod +x ./aws-iam-authenticator
     - name: Login to ECR
+      shell: bash
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v1
     - name: Create .npmrc file
+      shell: bash
       run: |
           echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_AUTH_TOKEN }}" > .npmrc
     - name: Build and tag image
+      shell: bash
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
       run: |
@@ -27,6 +31,7 @@ runs:
         docker build -t $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:${{ github.sha }} . --build-arg ENV_PREFIX=${{ inputs.environment-prefix }}
         docker push $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
     - name: Push image to ECR
+      shell: bash
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
       run: |
