@@ -24,17 +24,10 @@ runs:
       shell: bash
       run: |
           echo "//registry.npmjs.org/:_authToken=${{ inputs.npm-auth-token }}" > .npmrc
-    - name: Build and tag image
-      shell: bash
-      env:
-        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-      run: |
-        echo "//registry.npmjs.org/:_authToken=${{ inputs.npm-auth-token }}" > .npmrc
-        docker build -t $ECR_REGISTRY/${{ inputs.repository }}:${{ github.sha }} . --build-arg ENV_PREFIX=${{ inputs.environment-prefix }}
-        docker push $ECR_REGISTRY/${{ inputs.repository }}:${{ github.sha }}
-    - name: Push image to ECR
-      shell: bash
-      env:
-        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-      run: |
-        docker push $ECR_REGISTRY/${{ inputs.repository }}:${{ github.sha }}
+    - name: Build and push docker image
+      uses: docker/build-push-action@v2
+      with:
+        context: .
+        push: true
+        tags: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.repository }}:${{ github.sha }}
+        build-args: ${{ inputs.environment-prefix }}
