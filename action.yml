@@ -5,9 +5,12 @@ inputs:
   environment-prefix:
     description: 'dev, staging, prod, etc'
     required: true
-outputs:
-  aws-account-id:
-    description: 'The AWS account ID for the provided credentials'
+  repository:
+    description: 'Name of ECR repository, should match Github repository'
+    required: true
+  npm-auth-token:
+    description: 'NPM Auth token needed for NodeJS applications'
+    required: false
 runs:
   using: 'composite'
   steps:
@@ -21,18 +24,18 @@ runs:
     - name: Create .npmrc file
       shell: bash
       run: |
-          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_AUTH_TOKEN }}" > .npmrc
+          echo "//registry.npmjs.org/:_authToken=${{ inputs.npm-auth-token }}" > .npmrc
     - name: Build and tag image
       shell: bash
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
       run: |
-        echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_AUTH_TOKEN }}" > .npmrc
-        docker build -t $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:${{ github.sha }} . --build-arg ENV_PREFIX=${{ inputs.environment-prefix }}
-        docker push $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+        echo "//registry.npmjs.org/:_authToken=${{ inputs.npm-auth-token }}" > .npmrc
+        docker build -t $ECR_REGISTRY/${{ inputs.repository }}:${{ github.sha }} . --build-arg ENV_PREFIX=${{ inputs.environment-prefix }}
+        docker push $ECR_REGISTRY/${{ inputs.repository }}:${{ github.sha }}
     - name: Push image to ECR
       shell: bash
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
       run: |
-        docker push $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+        docker push $ECR_REGISTRY/${{ inputs.repository }}:${{ github.sha }}
